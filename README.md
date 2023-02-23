@@ -81,3 +81,11 @@ kafka-console-producer --bootstrap-server my-cluster-kafka-bootstrap.kafka.svc:9
 [2023-02-23 09:27:49,366] WARN [Producer clientId=console-producer] Bootstrap broker my-cluster-kafka-bootstrap.kafka.svc:9093 (id: -1 rack: null) disconnected (org.apache.kafka.clients.NetworkClient)
 [2023-02-23 09:27:49,527] WARN [Producer clientId=console-producer] Bootstrap broker my-cluster-kafka-bootstrap.kafka.svc:9093 (id: -1 rack: null) disconnected (org.apache.kafka.clients.NetworkClient)
 ```
+
+```shell
+$ kubectl logs -n kafka my-cluster-kafka-0
+...
+2023-02-23 12:13:34,442 INFO [SocketServer listenerType=ZK_BROKER, nodeId=0] Failed authentication with /10.244.0.23 (channelId=10.244.0.17:9093-10.244.0.23:38710-39) (SSL handshake failed) (org.apache.kafka.common.network.Selector) [data-plane-kafka-network-thread-0-ListenerName(TLS-9093)-SSL-7]
+2023-02-23 12:13:35,406 INFO [SocketServer listenerType=ZK_BROKER, nodeId=0] Failed authentication with /10.244.0.23 (channelId=10.244.0.17:9093-10.244.0.23:38722-39) (SSL handshake failed) (org.apache.kafka.common.network.Selector) [data-plane-kafka-network-thread-0-ListenerName(TLS-9093)-SSL-8]
+...
+```
