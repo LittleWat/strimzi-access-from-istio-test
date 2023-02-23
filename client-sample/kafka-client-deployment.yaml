@@ -1,0 +1,44 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-sample-producer
+  namespace: istio-kafka-client-sample
+  labels:
+    app: kafka-sample-producer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-sample-producer
+  template:
+    metadata:
+      labels:
+        app: kafka-sample-producer
+      annotations:
+        # Add these annotations to mount the certificates from the secrets in the sidecar.
+        # `secretName` must match `secretName` on the namespace's Certificate.
+        sidecar.istio.io/userVolume: |-
+          [
+            {"name": "certs", "secret": {"secretName": "client-certs"}},
+            {"name": "cacert", "secret": {"secretName": "ca-cert"}}
+          ]
+        # Paths in volume mounts must match those in the DestinationRule.
+        sidecar.istio.io/userVolumeMount: |-
+          [
+            {"name": "certs", "mountPath":"/etc/certs", "readonly":true}, 
+            {"name": "cacert", "mountPath":"/etc/cacert", "readonly":true}
+          ]
+
+    spec:
+      containers:
+      - name: simple-golang-producer
+        image: simple-golang-producer
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: "my-cluster-kafka-bootstrap.kafka.svc:9093"
+        - name: KafkaTopic
+          value: "test-topic"
+        - name: TYPE
+          value: "producer"

@@ -1,0 +1,76 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: istio-kafka-client-sample
+  labels:
+    name: istio-kafka-client-sample
+    istio-injection: enabled
+---
+# Client certificate for use by Kafka clients in this namespace.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: client-certs
+  namespace: istio-kafka-client-sample
+spec:
+  commonName: super-user
+  dnsNames:
+  - super-user
+  secretName: client-certs
+  duration: 87600h  # 3650d
+  privateKey:
+    algorithm: RSA
+    size: 2048
+  usages:
+  - client auth
+  issuerRef:
+    name: ca-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ca-cert
+  namespace: istio-kafka-client-sample
+data:
+  # this is the same as `/ca-issuer.yaml`
+  ca-cert.pem: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURXRENDQWtDZ0F3SUJBZ0lKQU4zaHRpYlZjVFpNTUEwR0NTcUdTSWIzRFFFQkN3VUFNQ1V4Q3pBSkJnTlYKQkFZVEFrcFFNUll3RkFZRFZRUUREQTEwWlhOMExXTmhMbXh2WTJGc01CNFhEVEl6TURJeU16QTRNRGsxTmxvWApEVEkxTVRJeE16QTRNRGsxTmxvd0pURUxNQWtHQTFVRUJoTUNTbEF4RmpBVUJnTlZCQU1NRFhSbGMzUXRZMkV1CmJHOWpZV3d3Z2dFaU1BMEdDU3FHU0liM0RRRUJBUVVBQTRJQkR3QXdnZ0VLQW9JQkFRRGpBWVVhaXpsMVBaMlQKU0lIdEozaFViVm1BUEcxVW5nUzV5ZW5QN0d0ZnhlT3FMbDJWZ3FkYmVMMjRLcW55OWxnTDVOYVpOUUlrb2t5UQpCaU5pY2l4QVh0c1ZqeUk2SnN4SEllRFhjQmkzUzZUTHg1di9CK0NDdGt3bS9oeklZUHRsZjZPd3VUNThDTXNoCmI2VjRpR09qb0luUXdHMzVGa3BVRzhGNk1rT3U1aG5oblBsd3QxcnF5OEswY05pNkdudVF3amVOaUVhaVZEYmsKclhqeFpzQ29Wa0tTNkdHRHNCemdmalVNSjF5SzB4eXRETU5HdmYxajhlNE1EUE9ZZGI0ZFBPUXNxSDhzVTl1NQpIOC9uQWtQdmh4WFNtaUF3aUE5NTBoRjZDZ0JqMW45dGpXaTIyKzdpWms2QnE3TlhEUGttbHg0cEtUd093c3E0Cko0SjVPRFNmQWdNQkFBR2pnWW93Z1ljd0R3WURWUjBUQVFIL0JBVXdBd0VCL3pBZEJnTlZIUTRFRmdRVXE5em8KSW5sVGNNVEZQQ2RlTHdVbFBmMVBjeTR3VlFZRFZSMGpCRTR3VElBVXE5em9JbmxUY01URlBDZGVMd1VsUGYxUApjeTZoS2FRbk1DVXhDekFKQmdOVkJBWVRBa3BRTVJZd0ZBWURWUVFEREExMFpYTjBMV05oTG14dlkyRnNnZ2tBCjNlRzJKdFZ4Tmt3d0RRWUpLb1pJaHZjTkFRRUxCUUFEZ2dFQkFIZVYvSFBpVmxvSXJTYy82R1hWRkxYUERtT0oKTEZjUzhlb0R1bk8vRmVFRzFUV1NKTTVFRG91ZCthYnE3Qzd6K3JUMVJQTVFhM1huMmVXT09GK1ArNzZ6K0t5SwpiYVJXQ1IxVW51Z29MamgxSjdrbWdGbW5DbjVKYlc5MzJQUkFmUnZzVVduTTFUVjFheW1uR0F4YkhZNGNBK2JrCmlhZXIyOEJ4L01YMVFyMVBzUHdHZ3Q5U3JZV2RUT3FHWm9SVnFMelNmRXMreWIxcFVTbmh0WXI5Nml6UHZ1dloKT2xhT2FCZmdWRlBnNzlHNGdmbDlpWjFwSkVGWjFMZmkzK3pHRkNrb1NtdFcxZ3E4ODBJaDYrQTk5Z3VFdXU4dwp3Nk5RRTN1YVMrOWcrRnNacGV4dDh1ellrZGpQQ2VGZHYyOFdQNnZQZ01CQ0N1cjE1ZjFuUHorQmxIZz0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+---
+# DestinationRule telling Envoy to originate an mTLS connection to Kafka, using custom certificates.
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: kafka-mtls
+  namespace: istio-kafka-client-sample
+spec:
+  host: my-cluster-kafka-bootstrap.kafka.svc
+  exportTo:
+  - "."
+  trafficPolicy:
+    tls:
+      mode: MUTUAL
+      clientCertificate: /etc/certs/tls.crt
+      privateKey: /etc/certs/tls.key
+      caCertificates: /etc/cacert/ca-cert.pem
+---
+#apiVersion: networking.istio.io/v1alpha3
+#kind: ServiceEntry
+#metadata:
+#  name: kafka-mtls
+#  namespace: istio-kafka-client-sample
+#spec:
+#  hosts:
+#  - my-cluster-kafka-bootstrap.kafka.svc
+#  location: MESH_INTERNAL
+#  ports:
+#    - number: 9093
+#      name: kafka-tls
+#      protocol: TCP
+#  resolution: NONE
+#  workloadSelector:
+#    labels:
+#      strimzi.io/cluster: my-cluster-kafka
+#  exportTo:
+#    - .
