@@ -26,13 +26,19 @@ kubectl apply -f ./k8s/istio-addons
 ```shell
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.yaml
 
+kubectl wait --for=condition=Available --timeout=300s -n cert-manager deployment/cert-manager
+kubectl wait --for=condition=Available --timeout=300s -n cert-manager deployment/cert-manager-cainjector
+kubectl wait --for=condition=Available --timeout=300s -n cert-manager deployment/cert-manager-webhook
+
 # create CA
 kubectl apply -f ./k8s/ca-key-pair.yaml
 kubectl apply -f ./k8s/ca-issuer.yaml
 
 # create certificates for strimzi
-kubectl apply -f ./k8s/strimzi-ca.yaml
+kubectl create namespace kafka
 kubectl apply -f ./k8s/broker-listner-cert.yaml
+kubectl apply -f ./k8s/strimzi-ca.yaml
+
 ```
 
 ### start strimzi(kafka)
@@ -40,8 +46,6 @@ kubectl apply -f ./k8s/broker-listner-cert.yaml
 ref: [Quickstarts](https://strimzi.io/quickstarts/)
 
 ```shell
-kubectl create namespace kafka
-
 kubectl create -f 'https://strimzi.io/install/latest?namespace=kafka' -n kafka
 
 kubectl apply -f ./k8s/kafka-my-cluster.yaml
