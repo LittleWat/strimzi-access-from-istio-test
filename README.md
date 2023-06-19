@@ -3,6 +3,8 @@
 This is a sample repo to access kafka deployed by strimzi-operator from the pod that has istio-proxy sidecar.
 This does not work as expected and now I need help to resolve the issue.
 
+Qustion: https://github.com/orgs/strimzi/discussions/8148
+
 ## setup
 
 ### start minikube
